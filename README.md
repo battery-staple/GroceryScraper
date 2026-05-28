@@ -1,30 +1,30 @@
 # GroceryScraper
 
-A modular grocery price comparison tool with a premium Terminal User Interface (TUI) built using Kotlin, Mosaic, and Playwright.
+> **Disclaimer:** 
+> This project is a vibecoding experiment. I generally verify that code quality is decent, but I have intentionally not thought very hard about edge cases. Bug reports are appreciated, though!
 
-## Setup
+A Kotlin CLI tool that uses Playwright to concurrently scrape and compare grocery prices across Walmart, Wegmans, Tops, Aldi, Trader Joe's, and Food Bazaar.
 
-### Prerequisites
-- Java 23+ (earlier versions may work if `jvmToolchain` is adjusted)
-- Gradle 9.3+
+## Quick Start
 
-### Installation
-1. Clone the repository.
-2. Initialize Playwright browsers:
-   ```bash
-   mvn exec:java -e -D exec.mainClass=com.microsoft.playwright.CLI -D exec.args="install"
-   ```
-   *Note: Or run the application once; Playwright often handles installation on first run if configured, but manual installation is safer.*
+### Requirements
+Java 21+
 
-### Option 3: Single Executable (Nicer)
-You can build a single "fat" JAR that contains all dependencies:
+### Run via Gradle (Recommended)
+```bash
+./gradlew run
+```
+*(Playwright automatically downloads required browser binaries on the first run.)*
+
+### Build & Run Standalone Executable
 ```bash
 ./gradlew shadowJar
 ./scripts/grocery-scraper
 ```
-*Note: This JAR includes Playwright and all required libraries, making it easy to distribute.*
 
 ## Usage
-1. Enter your Zip Code when prompted.
-2. Search for a product (e.g., "Organic Milk").
-3. View comparison results across Walmart, Wegmans, Tops, Aldi, and Trader Joe's.
+
+1. Enter your Zip Code.
+2. Enter a product name (e.g., "Organic Milk") to search. 
+   - *Tip: Enter `d` instead of a product name to enable non-headless debug mode.*
+3. Results are displayed in the terminal and exported to an auto-opened HTML report.

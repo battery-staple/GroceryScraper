@@ -2,7 +2,8 @@ plugins {
     kotlin("jvm") version "2.1.0"
     kotlin("plugin.serialization") version "2.1.0"
     application
-    id("com.gradleup.shadow") version "8.3.5"
+    id("com.gradleup.shadow") version "9.4.2"
+    id("com.github.node-gradle.node") version "7.1.0"
 }
 
 group = "com.groceryscraper"
@@ -60,4 +61,53 @@ tasks.register<JavaExec>("reflect") {
 
 kotlin {
     jvmToolchain(21)
+}
+
+val frontendDir = file("$projectDir/frontend")
+
+node {
+    download = true
+    version = "22.14.0"
+    npmVersion = "10.9.2"
+    nodeProjectDir = frontendDir
+}
+
+val installFrontendDependencies by tasks.registering(com.github.gradle.node.npm.task.NpmTask::class) {
+    npmCommand = listOf("install")
+
+    inputs.file(frontendDir.resolve("package.json"))
+    inputs.file(frontendDir.resolve("package-lock.json"))
+    outputs.dir(frontendDir.resolve("node_modules"))
+}
+
+val buildFrontend by tasks.registering(com.github.gradle.node.npm.task.NpmTask::class) {
+    dependsOn(installFrontendDependencies)
+    npmCommand = listOf("run", "build")
+
+    inputs.dir(frontendDir.resolve("src"))
+    inputs.dir(frontendDir.resolve("public"))
+    inputs.file(frontendDir.resolve("package.json"))
+    inputs.file(frontendDir.resolve("package-lock.json"))
+    inputs.file(frontendDir.resolve("vite.config.js"))
+    inputs.file(frontendDir.resolve("index.html"))
+
+    outputs.dir(frontendDir.resolve("dist"))
+}
+
+val processFrontendResources by tasks.registering(Copy::class) {
+    dependsOn(buildFrontend)
+    from(frontendDir.resolve("dist"))
+    into(layout.buildDirectory.dir("generated/frontendResources/web"))
+}
+
+sourceSets {
+    main {
+        resources {
+            srcDir(layout.buildDirectory.dir("generated/frontendResources"))
+        }
+    }
+}
+
+tasks.named("processResources") {
+    dependsOn(processFrontendResources)
 }

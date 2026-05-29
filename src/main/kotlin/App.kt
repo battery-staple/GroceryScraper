@@ -30,7 +30,7 @@ fun main(args: Array<String>) = runBlocking {
         try {
             Runtime.getRuntime().exec(arrayOf("open", "http://localhost:8080"))
         } catch (e: Exception) {
-            // Ignore error if 'open' fails (e.g. in Docker)
+            // Ignore error if 'open' fails (e.g. if no GUI environment is available)
         }
         server.start(8080)
     } else {

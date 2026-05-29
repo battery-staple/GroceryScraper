@@ -14,20 +14,12 @@ Java 21+
 ```bash
 ./gradlew run
 ```
-*(Playwright automatically downloads required browser binaries on the first run. The frontend is not built automatically through this task; use Docker for a complete build.)*
+*(Playwright automatically downloads required browser binaries on the first run. The frontend is built and bundled automatically via Gradle tasks.)*
 
 ### Build & Run Standalone Executable
 ```bash
 ./gradlew shadowJar
 ./scripts/grocery-scraper
-```
-
-### Build & Run via Docker (Recommended for Web UI)
-This project uses a multi-stage Docker build to compile the React frontend, package the Kotlin backend, and run them together in a Playwright-ready environment.
-
-```bash
-docker build -t grocery-scraper .
-docker run -p 8080:8080 -it grocery-scraper
 ```
 
 ## Usage
@@ -36,8 +28,8 @@ You can run the application in two different modes: **Terminal UI (TUI)** and **
 
 ### Web Interface (New)
 To launch the interactive Web Dashboard instead of the CLI, run the application with the `--web` (or `-w`) flag. 
-- If running via Docker, the web interface is started automatically by default on `http://localhost:8080`.
-- If running via Gradle: `./gradlew run --args="--web"`
+- Run via Gradle: `./gradlew run --args="--web"`
+- Run via standalone executable: `./scripts/grocery-scraper --web`
 
 ### Terminal UI (CLI)
 

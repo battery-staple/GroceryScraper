@@ -11,6 +11,8 @@ import scrapers.*
  * Performs dependency injection and starts the CLI controller loop.
  */
 fun main(args: Array<String>) = runBlocking {
+    val debugMode = args.contains("--debug") || args.contains("-d")
+
     val engine = ScraperEngine(listOf(
 //        WalmartScraper(),
         WegmansScraper(),
@@ -26,6 +28,6 @@ fun main(args: Array<String>) = runBlocking {
         HtmlExporter
     )
 
-    val controller = CliController(engine, view, exporters)
+    val controller = CliController(engine, view, exporters, debugMode)
     controller.start()
 }

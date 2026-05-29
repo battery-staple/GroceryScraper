@@ -20,7 +20,8 @@ import output.ResultExporter
 class CliController(
     private val engine: ScraperEngine,
     private val view: CliView,
-    private val exporters: List<ResultExporter>
+    private val exporters: List<ResultExporter>,
+    private val debugMode: Boolean = false
 ) {
     /**
      * Starts the main interaction loop of the CLI application.
@@ -39,8 +40,8 @@ class CliController(
                     break // Go back to zip code loop
                 }
 
-                val (query, debugMode) = when (promptResult) {
-                    is SearchPromptResult.Search -> promptResult.query to promptResult.debugMode
+                val query = when (promptResult) {
+                    is SearchPromptResult.Search -> promptResult.query
                     else -> continue
                 }
                 

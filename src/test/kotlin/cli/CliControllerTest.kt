@@ -15,7 +15,7 @@ class CliControllerTest {
         val view = FakeCliView().apply {
             zipCodePrompts.add("") // First prompt empty
             zipCodePrompts.add("10001") // Second prompt valid
-            searchQueries.add(SearchPromptResult.Search("apple", false))
+            searchQueries.add(SearchPromptResult.Search("apple"))
             nextActions.add(NextAction.QUIT)
         }
         val engine = ScraperEngine(emptyList())
@@ -30,8 +30,8 @@ class CliControllerTest {
     fun whenSearchInputIsEmpty_rePromptsSearch() = runTest {
         val view = FakeCliView().apply {
             zipCodePrompts.add("10001")
-            searchQueries.add(SearchPromptResult.Search("", false)) // Empty query
-            searchQueries.add(SearchPromptResult.Search("milk", false)) // Valid query
+            searchQueries.add(SearchPromptResult.Search("")) // Empty query
+            searchQueries.add(SearchPromptResult.Search("milk")) // Valid query
             nextActions.add(NextAction.QUIT)
         }
         val engine = ScraperEngine(emptyList())
@@ -49,7 +49,7 @@ class CliControllerTest {
             zipCodePrompts.add("10001")
             searchQueries.add(SearchPromptResult.Back)
             zipCodePrompts.add("10002")
-            searchQueries.add(SearchPromptResult.Search("milk", false))
+            searchQueries.add(SearchPromptResult.Search("milk"))
             nextActions.add(NextAction.QUIT)
         }
         val engine = ScraperEngine(emptyList())
@@ -61,7 +61,7 @@ class CliControllerTest {
     }
 
     @Test
-    fun whenSearchInputIsDebug_enablesDebugMode() = runTest {
+    fun whenDebugModeIsEnabled_enablesDebugMode() = runTest {
         var isHeadlessObserved = true
         val scraper = object : Scraper {
             override val storeName = "TestStore"
@@ -77,10 +77,10 @@ class CliControllerTest {
         val engine = ScraperEngine(listOf(scraper))
         val view = FakeCliView().apply {
             zipCodePrompts.add("10001")
-            searchQueries.add(SearchPromptResult.Search("milk", debugMode = true))
+            searchQueries.add(SearchPromptResult.Search("milk"))
             nextActions.add(NextAction.QUIT)
         }
-        val controller = CliController(engine, view, emptyList())
+        val controller = CliController(engine, view, emptyList(), debugMode = true)
 
         controller.start()
 
@@ -103,7 +103,7 @@ class CliControllerTest {
         val exporter = FakeResultExporter()
         val view = FakeCliView().apply {
             zipCodePrompts.add("10001")
-            searchQueries.add(SearchPromptResult.Search("milk", false))
+            searchQueries.add(SearchPromptResult.Search("milk"))
             nextActions.add(NextAction.QUIT)
         }
         val controller = CliController(engine, view, listOf(exporter))
@@ -134,7 +134,7 @@ class CliControllerTest {
         val exporter = FakeResultExporter()
         val view = FakeCliView().apply {
             zipCodePrompts.add("10001")
-            searchQueries.add(SearchPromptResult.Search("milk", false))
+            searchQueries.add(SearchPromptResult.Search("milk"))
             nextActions.add(NextAction.QUIT)
         }
         val controller = CliController(engine, view, listOf(exporter))
@@ -155,11 +155,11 @@ class CliControllerTest {
         val engine = ScraperEngine(emptyList())
         val view = FakeCliView().apply {
             zipCodePrompts.add("10001")
-            searchQueries.add(SearchPromptResult.Search("milk", false))
+            searchQueries.add(SearchPromptResult.Search("milk"))
             nextActions.add(NextAction.CHANGE_ZIP)
 
             zipCodePrompts.add("10002")
-            searchQueries.add(SearchPromptResult.Search("eggs", false))
+            searchQueries.add(SearchPromptResult.Search("eggs"))
             nextActions.add(NextAction.QUIT)
         }
         val controller = CliController(engine, view, emptyList())
@@ -176,10 +176,10 @@ class CliControllerTest {
         val engine = ScraperEngine(emptyList())
         val view = FakeCliView().apply {
             zipCodePrompts.add("10001")
-            searchQueries.add(SearchPromptResult.Search("milk", false))
+            searchQueries.add(SearchPromptResult.Search("milk"))
             nextActions.add(NextAction.SEARCH_AGAIN)
 
-            searchQueries.add(SearchPromptResult.Search("eggs", false))
+            searchQueries.add(SearchPromptResult.Search("eggs"))
             nextActions.add(NextAction.QUIT)
         }
         val controller = CliController(engine, view, emptyList())
@@ -209,7 +209,7 @@ class CliControllerTest {
         val engine = ScraperEngine(listOf(scraper))
         val view = FakeCliView().apply {
             zipCodePrompts.add("10001")
-            searchQueries.add(SearchPromptResult.Search("milk", false))
+            searchQueries.add(SearchPromptResult.Search("milk"))
             nextActions.add(NextAction.QUIT)
         }
         val controller = CliController(engine, view, emptyList())

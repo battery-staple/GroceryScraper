@@ -24,20 +24,12 @@ class ConsoleCliView(private val scanner: Scanner = Scanner(System.`in`)) : CliV
         println("\nEnter Product to Search (or 'b' to change zip): ")
         val input = scanner.nextLine().trim()
         if (input.lowercase() == "b") return SearchPromptResult.Back
-        if (input.isEmpty()) return SearchPromptResult.Search("", debugMode = false)
-
-        if (input.lowercase() == "d") {
-            println("\u001b[33mDebug Mode Enabled (Non-headless)\u001b[0m")
-            print("Enter Product to Search: ")
-            val query = scanner.nextLine().trim()
-            return SearchPromptResult.Search(query, debugMode = true)
-        }
-
-        return SearchPromptResult.Search(input, debugMode = false)
+        
+        return SearchPromptResult.Search(input)
     }
 
     override fun showScrapeStart(query: String, zipCode: String) {
-        println("\n\u001b[36mScraping stores for '$query' in $zipCode... (Use 'd' for debug/non-headless mode)\u001b[0m")
+        println("\n\u001b[36mScraping stores for '$query' in $zipCode...\u001b[0m")
     }
 
     override fun showScrapeState(state: ScrapeState) {

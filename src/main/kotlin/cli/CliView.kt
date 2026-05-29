@@ -9,9 +9,8 @@ sealed interface SearchPromptResult {
     /**
      * Represents a search query intent.
      * @property query The product search query.
-     * @property debugMode True if the search should run in non-headless debug mode.
      */
-    data class Search(val query: String, val debugMode: Boolean) : SearchPromptResult
+    data class Search(val query: String) : SearchPromptResult
 
     /**
      * Represents user intent to go back to the zip code prompt.

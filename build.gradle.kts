@@ -6,8 +6,13 @@ plugins {
     id("com.github.node-gradle.node") version "7.1.0"
 }
 
+val gitVersionProvider = providers.exec {
+    commandLine("git", "describe", "--tags", "--abbrev=0")
+    isIgnoreExitValue = true
+}.standardOutput.asText.map { it.trim().removePrefix("v") }.orElse("1.0-SNAPSHOT")
+
 group = "com.groceryscraper"
-version = "1.0-SNAPSHOT"
+version = gitVersionProvider.get()
 
 repositories {
     mavenCentral()
@@ -72,7 +77,12 @@ node {
     nodeProjectDir = frontendDir
 }
 
+val syncFrontendVersion by tasks.registering(com.github.gradle.node.npm.task.NpmTask::class) {
+    npmCommand = listOf("version", version.toString(), "--no-git-tag-version", "--allow-same-version")
+}
+
 val installFrontendDependencies by tasks.registering(com.github.gradle.node.npm.task.NpmTask::class) {
+    dependsOn(syncFrontendVersion)
     npmCommand = listOf("install")
 
     inputs.file(frontendDir.resolve("package.json"))

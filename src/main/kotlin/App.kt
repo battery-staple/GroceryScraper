@@ -13,7 +13,7 @@ import web.WebServer
  */
 fun main(args: Array<String>) = runBlocking {
     val debugMode = args.contains("--debug") || args.contains("-d")
-    val webMode = args.contains("--web") || args.contains("-w")
+    val tuiMode = args.contains("--tui") || args.contains("-t")
 
     val engine = ScraperEngine(listOf(
 //        WalmartScraper(),
@@ -24,16 +24,7 @@ fun main(args: Array<String>) = runBlocking {
         FoodBazaarScraper()
     ))
 
-    if (webMode) {
-        val server = WebServer(engine)
-        println("Starting Web Interface at http://localhost:8080")
-        try {
-            Runtime.getRuntime().exec(arrayOf("open", "http://localhost:8080"))
-        } catch (e: Exception) {
-            // Ignore error if 'open' fails (e.g. if no GUI environment is available)
-        }
-        server.start(8080)
-    } else {
+    if (tuiMode) {
         val view = ConsoleCliView()
         val exporters = listOf(
             TerminalExporter(),
@@ -42,5 +33,14 @@ fun main(args: Array<String>) = runBlocking {
 
         val controller = CliController(engine, view, exporters, debugMode)
         controller.start()
+    } else {
+        val server = WebServer(engine)
+        println("Starting Web Interface at http://localhost:8080")
+        try {
+            Runtime.getRuntime().exec(arrayOf("open", "http://localhost:8080"))
+        } catch (e: Exception) {
+            // Ignore error if 'open' fails (e.g. if no GUI environment is available)
+        }
+        server.start(8080)
     }
 }

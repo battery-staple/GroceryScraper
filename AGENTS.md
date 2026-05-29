@@ -36,7 +36,9 @@ GroceryScraper is a modular Kotlin application for comparing grocery prices acro
 - **Forward-looking Design**: Use data classes like `ScrapeRequest` for parameters to allow for future expansion without breaking API contracts.
 
 ### Package-Specific Rules
-- **Nested AGENTS.md**: Document package-specific invariants in their own directories using `AGENTS.md` files (e.g., `src/main/kotlin/scrapers/AGENTS.md`).
+- **Nested AGENTS.md**: Document package-specific invariants in their own directories using `AGENTS.md` files.
+  - See `src/main/kotlin/scrapers/AGENTS.md` for scraper guidelines.
+  - See `frontend/AGENTS.md` for frontend development and testing rules.
 - **Check Nested Directories**: ALWAYS check nested directories for `AGENTS.md` files whenever a directory is relevant to your task.
 
 ### Documentation

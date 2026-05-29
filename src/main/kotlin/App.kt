@@ -5,6 +5,7 @@ import kotlinx.coroutines.runBlocking
 import output.HtmlExporter
 import output.TerminalExporter
 import scrapers.*
+import web.WebServer
 
 /**
  * Main entry point of the GroceryScraper application.
@@ -12,6 +13,7 @@ import scrapers.*
  */
 fun main(args: Array<String>) = runBlocking {
     val debugMode = args.contains("--debug") || args.contains("-d")
+    val webMode = args.contains("--web") || args.contains("-w")
 
     val engine = ScraperEngine(listOf(
 //        WalmartScraper(),
@@ -22,12 +24,23 @@ fun main(args: Array<String>) = runBlocking {
         FoodBazaarScraper()
     ))
 
-    val view = ConsoleCliView()
-    val exporters = listOf(
-        TerminalExporter(),
-        HtmlExporter
-    )
+    if (webMode) {
+        val server = WebServer(engine)
+        println("Starting Web Interface at http://localhost:8080")
+        try {
+            Runtime.getRuntime().exec(arrayOf("open", "http://localhost:8080"))
+        } catch (e: Exception) {
+            // Ignore error if 'open' fails (e.g. in Docker)
+        }
+        server.start(8080)
+    } else {
+        val view = ConsoleCliView()
+        val exporters = listOf(
+            TerminalExporter(),
+            HtmlExporter
+        )
 
-    val controller = CliController(engine, view, exporters, debugMode)
-    controller.start()
+        val controller = CliController(engine, view, exporters, debugMode)
+        controller.start()
+    }
 }

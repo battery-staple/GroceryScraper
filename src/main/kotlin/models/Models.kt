@@ -14,7 +14,8 @@ data class Product(
 data class ScrapeRequest(
     val query: String,
     val zipCode: String,
-    val isHeadless: Boolean = true
+    val isHeadless: Boolean = true,
+    val selectedStores: List<String>? = null
 )
 
 sealed interface ScrapeResult {
@@ -35,12 +36,27 @@ data class FailureReason(
     val reason: String
 )
 
+@Serializable
 sealed interface ScrapeState {
     val store: String
 
+    @Serializable
+    @kotlinx.serialization.SerialName("Navigating")
     data class Navigating(override val store: String, val url: String) : ScrapeState
+    
+    @Serializable
+    @kotlinx.serialization.SerialName("SettingLocation")
     data class SettingLocation(override val store: String, val zipCode: String) : ScrapeState
+    
+    @Serializable
+    @kotlinx.serialization.SerialName("WaitingForResults")
     data class WaitingForResults(override val store: String, val additionalInfo: String? = null) : ScrapeState
+    
+    @Serializable
+    @kotlinx.serialization.SerialName("Parsing")
     data class Parsing(override val store: String) : ScrapeState
+    
+    @Serializable
+    @kotlinx.serialization.SerialName("Warning")
     data class Warning(override val store: String, val message: String) : ScrapeState
 }

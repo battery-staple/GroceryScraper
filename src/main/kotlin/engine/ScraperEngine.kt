@@ -14,7 +14,7 @@ import models.ScrapeResult
 import models.ScrapeState
 import scrapers.Scraper
 
-class ScraperEngine(private val scrapers: List<Scraper>) {
+class ScraperEngine(val scrapers: List<Scraper>) {
 
     suspend fun runScrapers(
         request: ScrapeRequest, 
@@ -49,10 +49,16 @@ class ScraperEngine(private val scrapers: List<Scraper>) {
         stateChannel: Channel<ScrapeState>?
     ): List<ScrapeResult> = coroutineScope {
         val requestWithHeadless = request.copy(isHeadless = headless)
-        Playwright.create().use { playwright ->
-            playwright.chromium().launch(BrowserType.LaunchOptions().setHeadless(headless)).use { browser ->
-                scrapers.map { scraper ->
-                    async {
+        val scrapersToRun = if (requestWithHeadless.selectedStores != null) {
+            scrapers.filter { requestWithHeadless.selectedStores.contains(it.storeName) }
+        } else {
+            scrapers
+        }
+        
+        scrapersToRun.map { scraper ->
+            async(kotlinx.coroutines.Dispatchers.IO) {
+                Playwright.create().use { playwright ->
+                    playwright.chromium().launch(BrowserType.LaunchOptions().setHeadless(headless)).use { browser ->
                         val context = browser.newContext(
                             Browser.NewContextOptions()
                                 .setUserAgent(EngineConfig.USER_AGENT)
@@ -68,9 +74,9 @@ class ScraperEngine(private val scrapers: List<Scraper>) {
                             context.close()
                         }
                     }
-                }.map { it.await() }
+                }
             }
-        }
+        }.map { it.await() }
     }
 }
 

@@ -4,27 +4,38 @@ import com.microsoft.playwright.BrowserContext
 import models.Product
 import models.ScrapeRequest
 import models.ScrapeResult
+import models.ScrapeState
+import scrapers.ScrapingUtils.parsePrice
 
 class WegmansScraper : Scraper {
     override val storeName: String = "Wegmans"
 
-    override suspend fun scrape(context: BrowserContext, request: ScrapeRequest): ScrapeResult {
+    override suspend fun scrape(
+        context: BrowserContext, 
+        request: ScrapeRequest,
+        onState: suspend (ScrapeState) -> Unit
+    ): ScrapeResult {
         val page = PlaywrightPageProxy(context.newPage())
         return try {
-            scrapeWithPage(page, request)
+            scrapeWithPage(page, request, onState)
         } finally {
             page.close()
         }
     }
 
-    suspend fun scrapeWithPage(page: PageProxy, request: ScrapeRequest): ScrapeResult {
-        println("[$storeName] Navigating to Wegmans...")
-        page.navigate("https://www.wegmans.com/shop/search?query=${request.query}")
+    suspend fun scrapeWithPage(
+        page: PageProxy, 
+        request: ScrapeRequest,
+        onState: suspend (ScrapeState) -> Unit = {}
+    ): ScrapeResult {
+        val url = "https://www.wegmans.com/shop/search?query=${request.query}"
+        onState(ScrapeState.Navigating(storeName, url))
+        page.navigate(url)
         
-        println("[$storeName] Setting Zip Code to ${request.zipCode}...")
-        setStore(page, request.zipCode)
+        onState(ScrapeState.SettingLocation(storeName, request.zipCode))
+        setStore(page, request.zipCode, onState)
         
-        println("[$storeName] Waiting for results...")
+        onState(ScrapeState.WaitingForResults(storeName))
         try {
             // Wait for product cards to appear
             page.waitForSelector(".component--product-tile", 20000.0)
@@ -33,7 +44,7 @@ class WegmansScraper : Scraper {
             return ScrapeResult.Failure(storeName, "Timeout waiting for results (Title: $title): ${e.message}")
         }
         
-        println("[$storeName] Parsing results...")
+        onState(ScrapeState.Parsing(storeName))
         val results = page.querySelectorAll(".component--product-tile").mapNotNull { element ->
             val name = element.querySelector("h3.component--base-heading")?.textContent() 
                 ?: element.querySelector(".global--card-title")?.textContent()
@@ -66,7 +77,7 @@ class WegmansScraper : Scraper {
         }
     }
 
-    private fun setStore(page: PageProxy, zipCode: String) {
+    private suspend fun setStore(page: PageProxy, zipCode: String, onState: suspend (ScrapeState) -> Unit) {
         try {
             // Wegmans often shows a location selector in the header
             val selectButton = page.querySelector("button:has-text('Select a Store')") ?:
@@ -80,17 +91,8 @@ class WegmansScraper : Scraper {
                 page.click(".store-list-item button:has-text('Make This My Store')", 2000.0)
             }
         } catch (e: Exception) {
-            // Non-critical
+            onState(ScrapeState.Warning(storeName, "Failed to set store: ${e.message}"))
         }
     }
 
-    private fun parsePrice(priceText: String): Int? {
-        val match = Regex("""\$?\d+\.\d{2}""").find(priceText)
-        return if (match != null) {
-            val numeric = match.value.replace("$", "").toDoubleOrNull() ?: return null
-            (numeric * 100).toInt()
-        } else {
-            null
-        }
-    }
 }

@@ -9,38 +9,10 @@ import kotlin.test.assertIs
 
 class WegmansScraperTest {
 
-    class FakeElementProxy(
-        private val text: String? = null,
-        private val attrs: Map<String, String> = emptyMap(),
-        private val children: Map<String, FakeElementProxy> = emptyMap()
-    ) : ElementProxy {
-        override fun textContent(): String? = text
-        override fun getAttribute(name: String): String? = attrs[name]
-        override fun querySelector(selector: String): ElementProxy? = children[selector]
-        override fun click() {}
-        override fun fill(value: String) {}
-    }
-
-    class FakePageProxy : PageProxy {
-        var navigatedUrl: String? = null
-        var elements: List<FakeElementProxy> = emptyList()
-
-        override fun navigate(url: String) { navigatedUrl = url }
-        override fun waitForSelector(selector: String, timeoutMs: Double) {}
-        override fun querySelectorAll(selector: String): List<ElementProxy> = elements
-        override fun querySelector(selector: String): ElementProxy? = null
-        override fun fill(selector: String, value: String) {}
-        override fun click(selector: String, timeoutMs: Double) {}
-        override fun waitForTimeout(timeoutMs: Double) {}
-        override fun waitForLoadState(state: String) {}
-        override fun title(): String = "Fake Wegmans"
-        override fun close() {}
-    }
-
     @Test
     fun whenValidResults_returnsSuccess() = runBlocking {
         val scraper = WegmansScraper()
-        val fakePage = FakePageProxy().apply {
+        val fakePage = FakePageProxy(pageTitle = "Fake Wegmans").apply {
             elements = listOf(
                 FakeElementProxy(
                     attrs = mapOf("data-bv-product-id" to "SKU_59715"),

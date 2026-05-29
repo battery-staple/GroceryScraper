@@ -4,24 +4,35 @@ import com.microsoft.playwright.BrowserContext
 import models.Product
 import models.ScrapeRequest
 import models.ScrapeResult
+import models.ScrapeState
+import scrapers.ScrapingUtils.parsePrice
 
 class TraderJoesScraper : Scraper {
     override val storeName: String = "Trader Joe's"
 
-    override suspend fun scrape(context: BrowserContext, request: ScrapeRequest): ScrapeResult {
+    override suspend fun scrape(
+        context: BrowserContext, 
+        request: ScrapeRequest,
+        onState: suspend (ScrapeState) -> Unit
+    ): ScrapeResult {
         val page = PlaywrightPageProxy(context.newPage())
         return try {
-            scrapeWithPage(page, request)
+            scrapeWithPage(page, request, onState)
         } finally {
             page.close()
         }
     }
 
-    suspend fun scrapeWithPage(page: PageProxy, request: ScrapeRequest): ScrapeResult {
-        println("[$storeName] Navigating to Trader Joe's...")
-        page.navigate("https://www.traderjoes.com/home/search?q=${request.query}")
+    suspend fun scrapeWithPage(
+        page: PageProxy, 
+        request: ScrapeRequest,
+        onState: suspend (ScrapeState) -> Unit = {}
+    ): ScrapeResult {
+        val url = "https://www.traderjoes.com/home/search?q=${request.query}"
+        onState(ScrapeState.Navigating(storeName, url))
+        page.navigate(url)
         
-        println("[$storeName] Waiting for results...")
+        onState(ScrapeState.WaitingForResults(storeName))
         try {
             page.waitForLoadState("networkidle")
             // Target the article card which is stable even if hashes change
@@ -31,7 +42,7 @@ class TraderJoesScraper : Scraper {
             return ScrapeResult.Failure(storeName, "Timeout waiting for results (Title: $title): ${e.message}")
         }
         
-        println("[$storeName] Parsing results...")
+        onState(ScrapeState.Parsing(storeName))
         val results = page.querySelectorAll("article[class*='SearchResultCard_searchResultCard__']").mapNotNull { element ->
             // Use contains selectors for resilience against hashed class names
             val nameElement = element.querySelector("a[class*='SearchResultCard_searchResultCard__titleLink__']")
@@ -54,17 +65,6 @@ class TraderJoesScraper : Scraper {
             ScrapeResult.Failure(storeName, "No results found for query: ${request.query}")
         } else {
             ScrapeResult.Success(results)
-        }
-    }
-
-    private fun parsePrice(priceText: String): Int? {
-        // Find the first occurrence of something like $3.95 or 3.95
-        val match = Regex("""\$?\d+\.\d{2}""").find(priceText)
-        return if (match != null) {
-            val numeric = match.value.replace("$", "").toDoubleOrNull() ?: return null
-            (numeric * 100).toInt()
-        } else {
-            null
         }
     }
 }

@@ -1,15 +1,14 @@
 # GroceryScraper Developer Guide
 
 ## Project Overview
-GroceryScraper is a modular Kotlin application for comparing grocery prices across multiple stores. It uses Playwright for deterministic scraping and Mosaic for a premium terminal user interface.
+GroceryScraper is a modular Kotlin application for comparing grocery prices across multiple stores. It uses Playwright for deterministic scraping.
 
 ## Project Structure
 - `src/main/kotlin/`
-    - `App.kt`: Main entry point and Mosaic TUI initialization.
+    - `App.kt`: Main entry point.
     - `engine/`: Orchestration logic for concurrent scraping.
     - `scrapers/`: Implementation of store-specific logic.
     - `models/`: Domain models and JSON schema definitions.
-    - `tui/`: Mosaic components and state management.
 - `src/test/kotlin/`
     - Unit and integration tests following the guidelines below.
 
@@ -22,7 +21,7 @@ GroceryScraper is a modular Kotlin application for comparing grocery prices acro
 
 ### Design Patterns
 - **Provider Pattern**: Scrapers are providers that satisfy a common interface.
-- **Reactive UI**: Use Mosaic's reactive state management to keep the UI in sync with background scraping tasks.
+- **State Emitting**: Use Kotlin Flow to emit scraping state to the console to track progress of background scraping tasks.
 
 ### Error Handling
 - **Sealed Results**: Use sealed classes/interfaces for scraping results to force exhaustive handling of success and failure cases.
@@ -36,7 +35,15 @@ GroceryScraper is a modular Kotlin application for comparing grocery prices acro
     - It should be backed by assertions in the code to fail fast if the assumption is violated.
 - **Forward-looking Design**: Use data classes like `ScrapeRequest` for parameters to allow for future expansion without breaking API contracts.
 
+### Package-Specific Rules
+- **Nested AGENTS.md**: Document package-specific invariants in their own directories using `AGENTS.md` files (e.g., `src/main/kotlin/scrapers/AGENTS.md`).
+- **Check Nested Directories**: ALWAYS check nested directories for `AGENTS.md` files whenever a directory is relevant to your task.
+
+### Documentation
+- **KDoc / Documentation**: Always add KDoc/documentation comments to all classes, interfaces, methods, and properties in the final implementation, except for extremely trivial ones. This rule also strictly applies to test helpers, such as Fake objects or custom utility functions in tests.
+
 ---
+
 
 ## Writing tests
 
@@ -62,6 +69,7 @@ Unit test methods should use the following format:
 
 ### Assertions
 Always use the most specific assertion possible (i.e. prefer using `assertThat(x).isEmpty()` over `assertTrue { x.isEmpty() }`).
+- Avoid incomplete assertions on collections or objects (e.g. asserting only the size and one field of the first element). Instead, prefer complete assertions like `assertThat(myList).containsExactly(...)`.
 
 - Prefer using Google Truth assertions, when possible.
   - Exception: do NOT use `assertThat(...).isTrue()` or `assertThat(...).isFalse()`. Instead prefer `assertTrue { ... }` and `assertFalse { ... }`.

@@ -13,46 +13,41 @@ import kotlin.test.assertTrue
 class ScraperEngineTest {
 
     @Test
-    fun `runScrapers_returnsAggregatedResults`() = runTest {
-        // Arrange
+    fun runScrapers_returnsAggregatedResults() = runTest {
         val fakeScraper1 = FakeScraper("Store A", listOf(Product("Store A", 100, "link1", "Item 1")))
         val fakeScraper2 = FakeScraper("Store B", listOf(Product("Store B", 200, "link2", "Item 2")))
         val engine = ScraperEngine(listOf(fakeScraper1, fakeScraper2))
         val request = ScrapeRequest("test", "12345")
 
-        // Act
         val response = engine.runScrapers(request)
 
-        // Assert
-        assertThat(response.results).hasSize(2)
-        assertThat(response.results.map { it.store }).containsExactly("Store A", "Store B")
+        assertThat(response.results).containsExactly(
+            Product("Store A", 100, "link1", "Item 1"),
+            Product("Store B", 200, "link2", "Item 2")
+        )
         assertTrue { response.failures.isEmpty() }
     }
 
     @Test
-    fun `runScrapers_handlesFailures`() = runTest {
-        // Arrange
+    fun runScrapers_handlesFailures() = runTest {
         val failingScraper = FailingScraper("Store C", "Connection timeout")
         val engine = ScraperEngine(listOf(failingScraper))
         val request = ScrapeRequest("test", "12345")
 
-        // Act
         val response = engine.runScrapers(request)
 
-        // Assert
         assertThat(response.results).isEmpty()
-        assertThat(response.failures).hasSize(1)
-        assertThat(response.failures.first().store).isEqualTo("Store C")
-        assertThat(response.failures.first().reason).isEqualTo("Connection timeout")
+        assertThat(response.failures).containsExactly(
+            models.FailureReason("Store C", "Connection timeout")
+        )
     }
 
     @Test
-    fun `runScrapers_retriesOnRetryNonHeadless`() = runTest {
-        // Arrange
+    fun runScrapers_retriesOnRetryNonHeadless() = runTest {
         var scrapeCount = 0
         val retryScraper = object : Scraper {
             override val storeName: String = "RetryStore"
-            override suspend fun scrape(context: BrowserContext, request: ScrapeRequest): ScrapeResult {
+            override suspend fun scrape(context: BrowserContext, request: ScrapeRequest, onState: suspend (models.ScrapeState) -> Unit): ScrapeResult {
                 scrapeCount++
                 return if (request.isHeadless) {
                     ScrapeResult.RetryNonHeadless(storeName, "Bot detected")
@@ -64,46 +59,61 @@ class ScraperEngineTest {
         val engine = ScraperEngine(listOf(retryScraper))
         val request = ScrapeRequest("test", "12345")
 
-        // Act
         val response = engine.runScrapers(request, headless = true)
 
-        // Assert
         assertThat(scrapeCount).isEqualTo(2)
-        assertThat(response.results).hasSize(1)
-        assertThat(response.results.first().productName).isEqualTo("Recovered Item")
+        assertThat(response.results).containsExactly(
+            Product("RetryStore", 500, "link", "Recovered Item")
+        )
         assertTrue { response.failures.isEmpty() }
     }
 
     @Test
-    fun `runScrapers_treatsRetryNonHeadlessAsFailureIfAlreadyNonHeadless`() = runTest {
-        // Arrange
+    fun runScrapers_treatsRetryNonHeadlessAsFailureIfAlreadyNonHeadless() = runTest {
         val retryScraper = object : Scraper {
             override val storeName: String = "RetryStore"
-            override suspend fun scrape(context: BrowserContext, request: ScrapeRequest): ScrapeResult {
+            override suspend fun scrape(context: BrowserContext, request: ScrapeRequest, onState: suspend (models.ScrapeState) -> Unit): ScrapeResult {
                 return ScrapeResult.RetryNonHeadless(storeName, "Bot detected")
             }
         }
         val engine = ScraperEngine(listOf(retryScraper))
         val request = ScrapeRequest("test", "12345")
 
-        // Act
         val response = engine.runScrapers(request, headless = false)
 
-        // Assert
         assertThat(response.results).isEmpty()
-        assertThat(response.failures).hasSize(1)
-        assertThat(response.failures.first().reason).contains("Bot detection triggered")
+        assertThat(response.failures).containsExactly(
+            models.FailureReason("RetryStore", "Bot detection triggered: Bot detected")
+        )
     }
 
     //region Fakes
+    /**
+     * Fake implementation of [Scraper] that always returns a successful list of products.
+     * 
+     * @property storeName The name of the mock store.
+     * @property products The products to return on a successful scrape.
+     */
     private class FakeScraper(override val storeName: String, val products: List<Product>) : Scraper {
-        override suspend fun scrape(context: BrowserContext, request: ScrapeRequest): ScrapeResult {
+        /**
+         * Returns a success state with the predefined [products].
+         */
+        override suspend fun scrape(context: BrowserContext, request: ScrapeRequest, onState: suspend (models.ScrapeState) -> Unit): ScrapeResult {
             return ScrapeResult.Success(products)
         }
     }
 
+    /**
+     * Fake implementation of [Scraper] that always returns a failure state with the provided error.
+     * 
+     * @property storeName The name of the mock store.
+     * @property error The error message to return on a failed scrape.
+     */
     private class FailingScraper(override val storeName: String, val error: String) : Scraper {
-        override suspend fun scrape(context: BrowserContext, request: ScrapeRequest): ScrapeResult {
+        /**
+         * Returns a failure state with the predefined [error].
+         */
+        override suspend fun scrape(context: BrowserContext, request: ScrapeRequest, onState: suspend (models.ScrapeState) -> Unit): ScrapeResult {
             return ScrapeResult.Failure(storeName, error)
         }
     }

@@ -3,8 +3,11 @@ package output
 import models.FinalResponse
 import java.io.File
 
-object HtmlExporter {
-    fun exportAndOpen(query: String, response: FinalResponse) {
+/**
+ * Exporter that generates an HTML file of the results and opens it in the default system browser.
+ */
+object HtmlExporter : ResultExporter {
+    override fun export(query: String, response: FinalResponse) {
         val htmlBuilder = StringBuilder()
         htmlBuilder.append("<html><head><title>GroceryScraper Results</title>")
         htmlBuilder.append("<style>")

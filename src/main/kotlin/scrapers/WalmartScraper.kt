@@ -4,28 +4,39 @@ import com.microsoft.playwright.BrowserContext
 import models.Product
 import models.ScrapeRequest
 import models.ScrapeResult
+import models.ScrapeState
+import scrapers.ScrapingUtils.parsePrice
 
 class WalmartScraper : Scraper {
     override val storeName: String = "Walmart"
 
-    override suspend fun scrape(context: BrowserContext, request: ScrapeRequest): ScrapeResult {
+    override suspend fun scrape(
+        context: BrowserContext, 
+        request: ScrapeRequest,
+        onState: suspend (ScrapeState) -> Unit
+    ): ScrapeResult {
         val page = PlaywrightPageProxy(context.newPage())
         return try {
-            scrapeWithPage(page, request)
+            scrapeWithPage(page, request, onState)
         } finally {
             page.close()
         }
     }
 
-    suspend fun scrapeWithPage(page: PageProxy, request: ScrapeRequest): ScrapeResult {
-        println("[$storeName] Navigating to Walmart...")
-        page.navigate("https://www.walmart.com/search?q=${request.query}")
+    suspend fun scrapeWithPage(
+        page: PageProxy, 
+        request: ScrapeRequest,
+        onState: suspend (ScrapeState) -> Unit = {}
+    ): ScrapeResult {
+        val url = "https://www.walmart.com/search?q=${request.query}"
+        onState(ScrapeState.Navigating(storeName, url))
+        page.navigate(url)
         
         // Set Zip Code if needed
-        println("[$storeName] Setting Zip Code to ${request.zipCode}...")
-        setZipCode(page, request.zipCode)
+        onState(ScrapeState.SettingLocation(storeName, request.zipCode))
+        setZipCode(page, request.zipCode, onState)
         
-        println("[$storeName] Waiting for results...")
+        onState(ScrapeState.WaitingForResults(storeName))
         // Walmart uses 'item-stack' for search results
         try {
             page.waitForLoadState("networkidle")
@@ -36,7 +47,7 @@ class WalmartScraper : Scraper {
                 if (request.isHeadless) {
                     return ScrapeResult.RetryNonHeadless(storeName, "Bot detection triggered on search page")
                 }
-                println("[$storeName] Robot detection triggered. Please solve the captcha in the browser window.")
+                onState(ScrapeState.WaitingForResults(storeName, "Robot detection triggered. Please solve the captcha in the browser window."))
                 // Wait indefinitely for manual interaction
                 page.waitForSelector("[data-testid='item-stack']", 0.0)
             } else {
@@ -44,9 +55,19 @@ class WalmartScraper : Scraper {
             }
         }
         
-        println("[$storeName] Parsing results...")
+        onState(ScrapeState.Parsing(storeName))
+        val results = parseResults(page, request)
+        
+        return if (results.isEmpty()) {
+            ScrapeResult.Failure(storeName, "No results found for query: ${request.query}")
+        } else {
+            ScrapeResult.Success(results)
+        }
+    }
+
+    private fun parseResults(page: PageProxy, request: ScrapeRequest): List<Product> {
         // Target elements with data-item-id inside the stack
-        val results = page.querySelectorAll("div[data-testid='item-stack'] div[data-item-id]").mapNotNull { element ->
+        return page.querySelectorAll("div[data-testid='item-stack'] div[data-item-id]").mapNotNull { element ->
             val name = element.querySelector("[data-automation-id='product-title']")?.textContent() ?: return@mapNotNull null
             
             val priceContainerText = element.querySelector("[data-automation-id='product-price']")?.textContent()
@@ -64,15 +85,9 @@ class WalmartScraper : Scraper {
                 productName = name.trim()
             )
         }
-        
-        return if (results.isEmpty()) {
-            ScrapeResult.Failure(storeName, "No results found for query: ${request.query}")
-        } else {
-            ScrapeResult.Success(results)
-        }
     }
 
-    private fun setZipCode(page: PageProxy, zipCode: String) {
+    private suspend fun setZipCode(page: PageProxy, zipCode: String, onState: suspend (ScrapeState) -> Unit) {
         try {
             // Walmart's location selector often starts with a button in the header
             page.click("button:has-text('How do you want your items?')", 3000.0)
@@ -80,18 +95,7 @@ class WalmartScraper : Scraper {
             page.click("button:has-text('Save')")
             page.waitForTimeout(1000.0)
         } catch (e: Exception) {
-            // Non-critical, ignore if button not found (layout might be different or already set)
-        }
-    }
-
-    private fun parsePrice(priceText: String): Int? {
-        // Find the first occurrence of something like $3.95 or 3.95
-        val match = Regex("""\$?\d+\.\d{2}""").find(priceText)
-        return if (match != null) {
-            val numeric = match.value.replace("$", "").toDoubleOrNull() ?: return null
-            (numeric * 100).toInt()
-        } else {
-            null
+            onState(ScrapeState.Warning(storeName, "Failed to set zip code: ${e.message}"))
         }
     }
 }

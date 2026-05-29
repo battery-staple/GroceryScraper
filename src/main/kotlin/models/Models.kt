@@ -34,3 +34,13 @@ data class FailureReason(
     val store: String,
     val reason: String
 )
+
+sealed interface ScrapeState {
+    val store: String
+
+    data class Navigating(override val store: String, val url: String) : ScrapeState
+    data class SettingLocation(override val store: String, val zipCode: String) : ScrapeState
+    data class WaitingForResults(override val store: String, val additionalInfo: String? = null) : ScrapeState
+    data class Parsing(override val store: String) : ScrapeState
+    data class Warning(override val store: String, val message: String) : ScrapeState
+}

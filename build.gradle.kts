@@ -1,6 +1,6 @@
 plugins {
-    kotlin("jvm") version "2.1.0"
-    kotlin("plugin.serialization") version "2.1.0"
+    kotlin("jvm") version "2.3.21"
+    kotlin("plugin.serialization") version "2.3.21"
     application
     id("com.gradleup.shadow") version "9.4.2"
     id("com.github.node-gradle.node") version "7.1.0"
@@ -15,12 +15,12 @@ repositories {
 }
 
 dependencies {
-    implementation("com.microsoft.playwright:playwright:1.49.0")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.1")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
-    implementation("org.slf4j:slf4j-simple:2.0.16")
+    implementation("com.microsoft.playwright:playwright:1.60.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
+    implementation("org.slf4j:slf4j-simple:2.0.18")
     
-    val ktorVersion = "3.0.0"
+    val ktorVersion = "3.5.0"
     implementation("io.ktor:ktor-server-core:$ktorVersion")
     implementation("io.ktor:ktor-server-netty:$ktorVersion")
     implementation("io.ktor:ktor-server-websockets:$ktorVersion")
@@ -29,9 +29,9 @@ dependencies {
     implementation("io.ktor:ktor-server-cors:$ktorVersion")
     
     testImplementation(kotlin("test"))
-    testImplementation("org.junit.jupiter:junit-jupiter:6.0.0")
-    testImplementation("com.google.truth:truth:1.4.4")
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.1")
+    testImplementation("org.junit.jupiter:junit-jupiter:6.1.0")
+    testImplementation("com.google.truth:truth:1.4.5")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.11.0")
     testImplementation("io.ktor:ktor-server-test-host:$ktorVersion")
 }
 

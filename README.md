@@ -18,8 +18,17 @@ Java 21+
 
 ### Build & Run Standalone Executable
 ```bash
-./gradlew shadowJar
-./scripts/grocery-scraper
+./gradlew executable
+```
+This generates self-contained executables for both Unix (macOS/Linux) and Windows.
+You can then run the tool directly:
+**macOS/Linux:**
+```bash
+./build/executable/grocery-scraper
+```
+**Windows:**
+```cmd
+.\build\executable\grocery-scraper.bat
 ```
 
 ## Usage
@@ -29,7 +38,7 @@ You can run the application in two different modes: **Terminal UI (TUI)** and **
 ### Web Interface (New)
 To launch the interactive Web Dashboard instead of the CLI, run the application with the `--web` (or `-w`) flag. 
 - Run via Gradle: `./gradlew run --args="--web"`
-- Run via standalone executable: `./scripts/grocery-scraper --web`
+- Run via standalone executable: `./build/executable/grocery-scraper --web` (or `.bat` on Windows)
 
 ### Terminal UI (CLI)
 

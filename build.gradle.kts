@@ -111,3 +111,36 @@ sourceSets {
 tasks.named("processResources") {
     dependsOn(processFrontendResources)
 }
+
+tasks.register("executable") {
+    dependsOn(tasks.shadowJar)
+    val shadowJarTask = tasks.shadowJar.get()
+    
+    inputs.file(shadowJarTask.archiveFile)
+    
+    val outputDir = layout.buildDirectory.dir("executable")
+    val unixFile = outputDir.map { it.file("grocery-scraper") }
+    val winFile = outputDir.map { it.file("grocery-scraper.bat") }
+    outputs.file(unixFile)
+    outputs.file(winFile)
+    
+    doLast {
+        val originalFile = shadowJarTask.archiveFile.get().asFile
+        val execUnix = unixFile.get().asFile
+        val execWin = winFile.get().asFile
+        execUnix.parentFile.mkdirs()
+        
+        // Generate Unix executable
+        execUnix.outputStream().use { os ->
+            os.write("#!/bin/sh\nexec java --enable-native-access=ALL-UNNAMED -jar \"\$0\" \"\$@\"\n".toByteArray())
+            originalFile.inputStream().use { it.copyTo(os) }
+        }
+        execUnix.setExecutable(true)
+
+        // Generate Windows executable
+        execWin.outputStream().use { os ->
+            os.write("@echo off\r\njava --enable-native-access=ALL-UNNAMED -jar \"%~f0\" %*\r\nexit /b %errorlevel%\r\n".toByteArray())
+            originalFile.inputStream().use { it.copyTo(os) }
+        }
+    }
+}

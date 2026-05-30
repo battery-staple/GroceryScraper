@@ -52,13 +52,20 @@ jobs:
       - name: Build Executables
         run: ./gradlew executable
 
+      - name: Package Executables
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          cd build/executable
+          tar -czf grocery-scraper-mac-linux.tar.gz grocery-scraper
+          zip grocery-scraper-windows.zip grocery-scraper.bat
+
       - name: Create Github Release
         # Only create and publish a release if the workflow was triggered by a tag push
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            build/executable/grocery-scraper
-            build/executable/grocery-scraper.bat
+            build/executable/grocery-scraper-mac-linux.tar.gz
+            build/executable/grocery-scraper-windows.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

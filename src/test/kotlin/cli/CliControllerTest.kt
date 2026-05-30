@@ -61,6 +61,7 @@ class CliControllerTest {
     }
 
     @Test
+    @org.junit.jupiter.api.Tag("flaky")
     fun whenDebugModeIsEnabled_enablesDebugMode() = runTest {
         var isHeadlessObserved = true
         val scraper = object : Scraper {

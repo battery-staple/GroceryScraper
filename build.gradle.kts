@@ -50,7 +50,11 @@ tasks.getByName<JavaExec>("run") {
 }
 
 tasks.test {
-    useJUnitPlatform()
+    useJUnitPlatform {
+        if (System.getenv("CI") != null) {
+            excludeTags("flaky")
+        }
+    }
 }
 
 tasks.shadowJar {

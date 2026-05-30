@@ -39,6 +39,7 @@ class ScraperIntegrationTest {
     }
 
     @Test
+    @Tag("flaky")
     fun testWalmart() = runScraperTest(WalmartScraper(), "milk", "14850", headless = false)
 
     @Test
@@ -51,6 +52,7 @@ class ScraperIntegrationTest {
     fun testAldi() = runScraperTest(AldiScraper(), "milk", "14850")
 
     @Test
+    @Tag("flaky")
     fun testTraderJoes() = runScraperTest(TraderJoesScraper(), "milk", "14850")
 
     @Test

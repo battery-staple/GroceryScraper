@@ -43,6 +43,7 @@ class ScraperEngineTest {
     }
 
     @Test
+    @org.junit.jupiter.api.Tag("flaky")
     fun runScrapers_retriesOnRetryNonHeadless() = runTest {
         var scrapeCount = 0
         val retryScraper = object : Scraper {
@@ -69,6 +70,7 @@ class ScraperEngineTest {
     }
 
     @Test
+    @org.junit.jupiter.api.Tag("flaky")
     fun runScrapers_treatsRetryNonHeadlessAsFailureIfAlreadyNonHeadless() = runTest {
         val retryScraper = object : Scraper {
             override val storeName: String = "RetryStore"

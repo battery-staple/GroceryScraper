@@ -1,0 +1,64 @@
+name: CI & Release
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - '*'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build, Test and Release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+          cache: 'gradle'
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: 'frontend/package-lock.json'
+
+      - name: Install Frontend Dependencies
+        run: npm ci
+        working-directory: frontend
+
+      - name: Run Frontend Tests
+        run: npm test
+        working-directory: frontend
+
+      - name: Install Playwright system dependencies
+        run: npx playwright install-deps
+
+      - name: Run JVM Tests
+        run: ./gradlew test
+
+      - name: Build Executables
+        run: ./gradlew executable
+
+      - name: Create Github Release
+        # Only create and publish a release if the workflow was triggered by a tag push
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            build/executable/grocery-scraper
+            build/executable/grocery-scraper.bat
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
